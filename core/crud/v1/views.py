@@ -1,39 +1,48 @@
 from rest_framework import viewsets, serializers
 from .serializers import ItemSerializer
-from crud.models import Item
-from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.views import APIView
+from crud.models import Item
 
-class ItemViewSet(viewsets.ModelViewSet):
-    serializer_class = ItemSerializer
-    queryset = Item.objects.all()
-    
-    @action(detail=False, methods=['POST'], url_path='create')
-    def create_item(self, request):
-        serializer = self.get_serializer(data=request.data)
+class ItemList(APIView):
+    def post(self,request):
+        serializer = ItemSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_401_UNAUTHORIZED)
-    
-    @action(detail=False, methods=['GET'])
-    def list_items(self, request):
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def get(self, request):
         items = Item.objects.all()
-        serializer = self.get_serializer(items)
+        serializer = ItemSerializer(items, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
-    @action(detail=True, methods=['GET'])
-    def get_item(self, request, pk=None):
-        item = Item.objects.all(pk=pk)
-        serializer = self.get_serializer(item)
+class ItemDetail(APIView):
+    def get(self, request, pk):
+        try:
+            item = Item.objects.get(pk=pk)
+        except Item.DoesNotExist:
+            return Response({"error":"Movie not found"}, status=status.HTTP_404_NOT_FOUND)
+        serializer = ItemSerializer(item)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
-    @action(detail=True, methods=['GET'])
-    def delete_item(self, request, pk=None):
-        item = Item.objects.all(pk=pk)
-        serializer = self.get_serializer(item)
-        serializer.delete()
-        return Response(status=status.HTTP_200_OK)
+    def put(self, request, pk):
+        try:
+            item = Item.objects.get(pk=pk)
+        except Item.DoesNotExist:
+            return Response({"error":"Movie not found"}, status=status.HTTP_404_NOT_FOUND)
+        serializer = ItemSerializer(item, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-    
+    def delete(self, request, pk):
+        try:    
+            item = Item.objects.get(pk=pk)
+        except Item.DoesNotExist:
+            return Response({"error":"Movie not found"}, status=status.HTTP_404_NOT_FOUND)
+        item.delete()
+        return Response({"message": "Item deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
