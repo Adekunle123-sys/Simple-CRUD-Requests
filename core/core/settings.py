@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'user.apps.UserConfig',
     'crud.apps.CrudConfig',
     'rest_framework',
+   'drf_yasg',
 ]
 
 MIDDLEWARE = [
