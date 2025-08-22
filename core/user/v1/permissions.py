@@ -8,7 +8,12 @@ class IsAdminOrReaOnly(permissions.BasePermission):
             return bool(request.user and request.user.is_staff)
         
 class IsUserOrAdmin(permissions.BasePermission):
+    """For models with a .user field """
     def has_object_permission(self, request, view, obj):
-        is_owner = obj.user == request.user
-        is_admin=request.user and request.user.is_staff
-        return bool(is_owner or is_admin)
+        return bool(obj.user == request.user or request.user.is_staff)
+    
+    
+class IsSelfOrAdmin(permissions.BasePermission):
+    """For User model only."""
+    def has_object_permission(self, request, view, obj):
+        return bool(obj == request.user or request.user.is_staff)
